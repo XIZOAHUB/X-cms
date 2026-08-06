@@ -4,9 +4,10 @@ import { LoginPage } from '@components/auth/LoginPage'
 import { DashboardLayout } from '@components/layout/DashboardLayout'
 import { Dashboard } from '@components/dashboard/Dashboard'
 import { FileManager } from '@components/content/FileManager'
-import { EditorPage } from '@components/editor/EditorPage'
-import { DeployPage } from '@components/deploy/DeployPage'
-import { SettingsPage } from '@components/settings/SettingsPage'
+import { AiAssistant } from '@components/editor/AiAssistant'
+import { CloudflareManager } from '@components/deploy/CloudflareManager'
+import { WebsiteManager } from '@components/settings/WebsiteManager' 
+
 
 function App() {
   const { user, loading } = useAuth()
@@ -32,9 +33,10 @@ function App() {
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="files/*" element={<FileBrowser />} />
-        <Route path="edit/:owner/:repo/*" element={<EditorPage />} />
-        <Route path="deploy" element={<DeployPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        <Route path="edit/:owner/:repo/*" element={<AiAssistant />} />
+        <Route path="deploy" element={<CloudflareManager />} />
+        <Route path="settings" element={<WebsiteManager />} />
+
       </Route>
     </Routes>
   )
