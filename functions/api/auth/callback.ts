@@ -1,50 +1,118 @@
-// No external packages needed
 export const onRequest: PagesFunction = async (context) => {
-  const url = new URL(context.request.url);
-  const code = url.searchParams.get('code');
-  if (!code) return new Response('No code', { status: 400 });
+  try {
+    const url = new URL(context.request.url);
+    const code = url.searchParams.get("code");
 
-  // Exchange code for token
-  const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
-    method: 'POST',
-    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      client_id: context.env.GITHUB_CLIENT_ID,
-      client_secret: context.env.GITHUB_CLIENT_SECRET,
-      code,
-    }),
-  });
-  const tokenData: any = await tokenRes.json();
-  if (!tokenData.access_token) return new Response('Login failed', { status: 401 });
+    if (!code) {
+      return new Response("Missing GitHub code", { status: 400 });
+    }
 
-  // Get user info
-  const userRes = await fetch('https://api.github.com/user', {
-    headers: { Authorization: `Bearer ${tokenData.access_token}` },
-  });
-  const user: any = await userRes.json();
+    const clientId = context.env.GITHUB_CLIENT_ID;
+    const clientSecret = context.env.GITHUB_CLIENT_SECRET;
+    const jwtSecret = context.env.JWT_SECRET;
 
-  // Create JWT using Web Crypto API
-  const encoder = new TextEncoder();
-  const secretKeyData = encoder.encode(context.env.JWT_SECRET);
-  const key = await crypto.subtle.importKey(
-    'raw',
-    secretKeyData,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  const payload = { username: user.login, id: user.id, exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60 };
-  const payloadBytes = encoder.encode(JSON.stringify(payload));
-  const signature = await crypto.subtle.sign('HMAC', key, payloadBytes);
+    if (!clientId) {
+      return new Response("Missing GITHUB_CLIENT_ID", { status: 500 });
+    }
 
-  // Encode as Base64 (unpadded)
-  const base64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/=+$/, '');
-  const token = `${base64(encoder.encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' })))}.${base64(payloadBytes)}.${base64(new Uint8Array(signature))}`;
+    if (!clientSecret) {
+      return new Response("Missing GITHUB_CLIENT_SECRET", { status: 500 });
+    }
 
-  const response = Response.redirect('https://cms-web.xizoa.com/admin', 302);
-  response.headers.set(
-    'Set-Cookie',
-    `session=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`
-  );
-  return response;
+    if (!jwtSecret) {
+      return new Response("Missing JWT_SECRET", { status: 500 });
+    }
+
+    // Exchange code for access token
+    const tokenRes = await fetch(
+      "https://github.com/login/oauth/access_token",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+        }),
+      }
+    );
+
+    const tokenData: any = await tokenRes.json();
+
+    if (!tokenData.access_token) {
+      return new Response(
+        JSON.stringify(tokenData, null, 2),
+        {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    // Get GitHub user
+    const userRes = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+        Accept: "application/vnd.github+json",
+      },
+    });
+
+    const user: any = await userRes.json();
+
+    if (!user.login) {
+      return new Response(
+        JSON.stringify(user, null, 2),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    // Temporary session
+    const session = btoa(
+      JSON.stringify({
+        id: user.id,
+        username: user.login,
+        avatar: user.avatar_url,
+      })
+    );
+
+    const response = Response.redirect(
+      "https://cms-web.xizoa.com/dashboard",
+      302
+    );
+
+    response.headers.append(
+      "Set-Cookie",
+      `session=${session}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`
+    );
+
+    return response;
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify(
+        {
+          success: false,
+          error: err?.message ?? "Unknown error",
+          stack: err?.stack ?? null,
+        },
+        null,
+        2
+      ),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
 };
