@@ -1,4 +1,3 @@
---- START OF FILE X-cms-main/server.ts ---
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
@@ -208,4 +207,3 @@ bootstrap().catch((err) => {
   console.error("Failed to bootstrap the Express/Vite server:", err);
   process.exit(1);
 });
---- END OF FILE ---
