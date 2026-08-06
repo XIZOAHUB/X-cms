@@ -2,13 +2,13 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '@hooks/useAuth'
 import { LoginPage } from '@components/auth/LoginPage'
 import { DashboardLayout } from '@components/layout/DashboardLayout'
-// Dashboard ke import se { } hata diye hain (Assuming default export)
 import Dashboard from '@components/dashboard/Dashboard'
-// Naye components ke exact file names update kar diye hain
-import { FileManager } from '@components/content/FileManager'
-import { AiAssistant } from '@components/editor/AiAssistant'
-import { CloudflareManager } from '@components/deploy/CloudflareManager'
-import { WebsiteManager } from '@components/settings/WebsiteManager'
+
+// Sabhi naye imports se { } hata diye hain (Default imports)
+import FileManager from '@components/content/FileManager'
+import AiAssistant from '@components/editor/AiAssistant'
+import CloudflareManager from '@components/deploy/CloudflareManager'
+import WebsiteManager from '@components/settings/WebsiteManager'
 
 function App() {
   const { user, loading } = useAuth()
