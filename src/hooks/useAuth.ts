@@ -1,13 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'
 
-export const useAuth = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
+interface User {
+  username: string
+  id: number
+  exp: number
+}
 
-  const login = () => setIsAuthenticated(true);
-  const logout = () => setIsAuthenticated(false);
+export function useAuth() {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  return { isAuthenticated, user, login, logout };
-};
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then(res => {
+        if (!res.ok) throw new Error('Not authenticated')
+        return res.json()
+      })
+      .then(data => setUser(data))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false))
+  }, [])
 
-export default useAuth;
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    setUser(null)
+  }
+
+  return { user, loading, logout }
+}
