@@ -25,34 +25,34 @@ export const onRequest: PagesFunction = async (context) => {
 
     // Exchange code for access token
     const tokenRes = await fetch(
-  "https://github.com/login/oauth/access_token",
-  {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      client_id: clientId,
-      client_secret: clientSecret,
-      code,
-      redirect_uri: "https://cms-web.xizoa.com/api/auth/callback"
-    }),
-  }
-);
+      "https://github.com/login/oauth/access_token",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          redirect_uri: "https://cms-web.xizoa.com/api/auth/callback"
+        }),
+      }
+    );
 
-const responseText = await tokenRes.text();
+    const responseText = await tokenRes.text();
 
-if (!tokenRes.ok) {
-  return new Response(responseText, {
-    status: tokenRes.status,
-    headers: {
-      "Content-Type": "text/plain"
+    if (!tokenRes.ok) {
+      return new Response(responseText, {
+        status: tokenRes.status,
+        headers: {
+          "Content-Type": "text/plain"
+        }
+      });
     }
-  });
-}
 
-const tokenData = JSON.parse(responseText);
+    const tokenData = JSON.parse(responseText);
 
     if (!tokenData.access_token) {
       return new Response(
@@ -66,11 +66,12 @@ const tokenData = JSON.parse(responseText);
       );
     }
 
-    // Get GitHub user
+    // Get GitHub user - [FIXED]: Added User-Agent Header here
     const userRes = await fetch("https://api.github.com/user", {
       headers: {
         Authorization: `Bearer ${tokenData.access_token}`,
         Accept: "application/vnd.github+json",
+        "User-Agent": "Cloudflare-Pages-App", // GitHub STRICTLY requires this
       },
     });
 
