@@ -1,11 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '@hooks/useAuth'
-import { LoginPage } from '@components/auth/LoginPage'
-import { DashboardLayout } from '@components/layout/DashboardLayout'
+import LoginPage from '@components/auth/LoginPage'
+import DashboardLayout from '@components/layout/DashboardLayout'
 import Dashboard from '@components/dashboard/Dashboard'
-
-// Sabhi naye imports se { } hata diye hain (Default imports)
 import FileManager from '@components/content/FileManager'
+import BlogCMS from '@components/content/BlogCMS'
+import MediaLibrary from '@components/media/MediaLibrary'
 import AiAssistant from '@components/editor/AiAssistant'
 import CloudflareManager from '@components/deploy/CloudflareManager'
 import WebsiteManager from '@components/settings/WebsiteManager'
@@ -34,6 +34,8 @@ function App() {
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="files/*" element={<FileManager />} />
+        <Route path="blog/*" element={<BlogCMS />} />
+        <Route path="media/*" element={<MediaLibrary />} />
         <Route path="edit/:owner/:repo/*" element={<AiAssistant />} />
         <Route path="deploy" element={<CloudflareManager />} />
         <Route path="settings" element={<WebsiteManager />} />
