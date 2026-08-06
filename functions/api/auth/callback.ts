@@ -14,6 +14,14 @@ export const onRequest: PagesFunction<{
     const clientId = context.env.GITHUB_CLIENT_ID;
     const clientSecret = context.env.GITHUB_CLIENT_SECRET;
 
+    if (!clientId) {
+      return new Response("Missing GITHUB_CLIENT_ID", { status: 500 });
+    }
+
+    if (!clientSecret) {
+      return new Response("Missing GITHUB_CLIENT_SECRET", { status: 500 });
+    }
+
     // Exchange code for access token
     const params = new URLSearchParams({
       client_id: clientId,
@@ -37,15 +45,18 @@ export const onRequest: PagesFunction<{
     const tokenData: any = await tokenRes.json();
 
     if (!tokenData.access_token) {
-      return new Response(JSON.stringify(tokenData, null, 2), {
-        status: 401,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      return new Response(
+        JSON.stringify(tokenData, null, 2),
+        {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
     }
 
-    // GitHub user
+    // Fetch GitHub user
     const userRes = await fetch("https://api.github.com/user", {
       headers: {
         Authorization: `Bearer ${tokenData.access_token}`,
@@ -56,9 +67,21 @@ export const onRequest: PagesFunction<{
 
     const user: any = await userRes.json();
 
+    if (!user.id) {
+      return new Response(
+        JSON.stringify(user, null, 2),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    // Save user to D1
     const now = new Date().toISOString();
 
-    // Save / Update user in D1
     await context.env.DB.prepare(`
       INSERT INTO users (
         github_id,
@@ -70,7 +93,6 @@ export const onRequest: PagesFunction<{
         last_login
       )
       VALUES (?, ?, ?, ?, ?, ?, ?)
-
       ON CONFLICT(github_id)
       DO UPDATE SET
         username = excluded.username,
@@ -82,9 +104,9 @@ export const onRequest: PagesFunction<{
       .bind(
         user.id,
         user.login,
-        user.name,
-        user.email,
-        user.avatar_url,
+        user.name ?? "",
+        user.email ?? "",
+        user.avatar_url ?? "",
         now,
         now
       )
@@ -98,25 +120,22 @@ export const onRequest: PagesFunction<{
       })
     );
 
-    const response = Response.redirect(
-  "https://cms-web.xizoa.com/dashboard",
-  302
-);
+    // Redirect + Cookie
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: "https://cms-web.xizoa.com/dashboard",
+        "Set-Cookie": `session=${session}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`,
+      },
+    });
 
-response.headers.append(
-  "Set-Cookie",
-  `session=${session}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`
-);
-
-
-    return response;
   } catch (err: any) {
     return new Response(
       JSON.stringify(
         {
           success: false,
-          error: err.message,
-          stack: err.stack,
+          error: err?.message ?? "Unknown error",
+          stack: err?.stack ?? null,
         },
         null,
         2
