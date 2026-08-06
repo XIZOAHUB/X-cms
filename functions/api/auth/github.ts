@@ -1,3 +1,4 @@
+--- START OF FILE X-cms-main/functions/api/auth/github.ts ---
 export const onRequest: PagesFunction = async (context) => {
   const clientId = context.env.GITHUB_CLIENT_ID;
 
@@ -5,12 +6,14 @@ export const onRequest: PagesFunction = async (context) => {
     return new Response("GITHUB_CLIENT_ID is missing", { status: 500 });
   }
 
-  const redirectUri = "https://cms-web.xizoa.com/api/auth/callback";
+  const origin = new URL(context.request.url).origin;
+  const redirectUri = `${origin}/api/auth/callback`;
 
   const githubUrl = new URL("https://github.com/login/oauth/authorize");
   githubUrl.searchParams.set("client_id", clientId);
   githubUrl.searchParams.set("redirect_uri", redirectUri);
-  githubUrl.searchParams.set("scope", "user:email");
+  githubUrl.searchParams.set("scope", "repo,workflow,user");
 
   return Response.redirect(githubUrl.toString(), 302);
 };
+--- END OF FILE ---
