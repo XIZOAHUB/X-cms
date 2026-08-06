@@ -1,0 +1,6 @@
+{
+  "name": "AuroraCMS",
+  "description": "Mobile-first, GitHub-native Content Management System. Manage repositories, articles, file structures, SEO, and assets directly from your phone with built-in AI assistance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
