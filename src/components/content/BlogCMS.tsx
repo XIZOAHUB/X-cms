@@ -19,7 +19,7 @@ import { UserProfile, Repo, BlogPost, FileNode } from "../../types/index";
 import { fetchDirectory, fetchFileContent, commitFile, deleteFile, fetchAllFilesRecursive } from "../../services/githubApi";
 
 interface BlogCMSProps {
-  profile: UserProfile;
+  
   repo: Repo;
   branch: string;
 }
@@ -72,7 +72,7 @@ export function stringifyMarkdown(frontmatter: any, content: string): string {
   return yaml + content;
 }
 
-export default function BlogCMS({ profile, repo, branch }: BlogCMSProps) {
+export default function BlogCMS({ repo, branch }: BlogCMSProps) {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +104,7 @@ export default function BlogCMS({ profile, repo, branch }: BlogCMSProps) {
     setLoading(true);
     setError(null);
     try {
-      const allFiles = await fetchAllFilesRecursive(profile.pat, repo.owner, repo.name, branch);
+      const allFiles = await fetchAllFilesRecursive(repo.owner, repo.name, branch);
       
       // Filter for markdown files
       const mdFiles = allFiles.filter(
@@ -115,7 +115,7 @@ export default function BlogCMS({ profile, repo, branch }: BlogCMSProps) {
 
       for (const file of mdFiles) {
         try {
-          const fileData = await fetchFileContent(profile.pat, repo.owner, repo.name, file.path, branch);
+          const fileData = await fetchFileContent(repo.owner, repo.name, file.path, branch);
           const { frontmatter, content } = parseMarkdown(fileData.content);
 
           // Only parse posts that look like blog entries (usually have title frontmatter)
@@ -202,7 +202,7 @@ export default function BlogCMS({ profile, repo, branch }: BlogCMSProps) {
     setLoading(true);
     setError(null);
     try {
-      await deleteFile(profile.pat, repo.owner, repo.name, post.path, post.sha, `delete: remove blog post ${post.title}`, branch);
+      await deleteFile(repo.owner, repo.name, post.path, post.sha, `delete: remove blog post ${post.title}`, branch);
       loadBlogPosts();
     } catch (err: any) {
       setError(`Failed to delete post: ${err.message}`);
@@ -246,11 +246,11 @@ export default function BlogCMS({ profile, repo, branch }: BlogCMSProps) {
       // If path has changed and this is an existing file, we delete the old one first!
       const pathChanged = editingPost.sha && editingPost.path !== formPath;
       if (pathChanged) {
-        await deleteFile(profile.pat, repo.owner, repo.name, editingPost.path, editingPost.sha, `delete: clean old path for ${formTitle}`, branch);
+        await deleteFile(repo.owner, repo.name, editingPost.path, editingPost.sha, `delete: clean old path for ${formTitle}`, branch);
       }
 
       await commitFile(
-        profile.pat,
+        
         repo.owner,
         repo.name,
         formPath,

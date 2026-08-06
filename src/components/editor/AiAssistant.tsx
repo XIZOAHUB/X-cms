@@ -196,7 +196,7 @@ export default function AiAssistant({ profile, repo, branch }: AiAssistantProps)
 
     try {
       await commitFile(
-        profile.pat,
+        
         repo.owner,
         repo.name,
         savePath.trim(),

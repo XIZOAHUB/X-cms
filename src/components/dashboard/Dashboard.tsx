@@ -1,354 +1,153 @@
-import { useState, useEffect } from "react";
-import {
-  LayoutDashboard,
-  Globe,
-  GitCommit,
-  Clock,
-  History,
-  FileText,
-  Image,
-  RefreshCw,
-  ExternalLink,
-  CheckCircle2,
-  AlertTriangle,
-} from "lucide-react";
-import { UserProfile, Repo, CommitItem, FileNode } from "../../types/index";
+import React, { useState, useEffect } from "react";
+import { FileText, Image as ImageIcon, GitCommit, Settings, Globe, Plus, ArrowRight, Activity, Clock, Zap } from "lucide-react";
+import { Repo, CommitItem, FileNode } from "../../types";
 import { fetchRecentCommits, fetchAllFilesRecursive } from "../../services/githubApi";
+import { useAuthStore } from "../../store/authStore";
 
 interface DashboardProps {
-  profile: UserProfile;
   repo: Repo;
   branch: string;
-  globalConfig?: any;
   onNavigate: (tab: string) => void;
 }
 
-export default function Dashboard({ profile, repo, branch, globalConfig, onNavigate }: DashboardProps) {
+export default function Dashboard({ repo, branch, onNavigate }: DashboardProps) {
+  const { user } = useAuthStore();
   const [commits, setCommits] = useState<CommitItem[]>([]);
-  const [loadingCommits, setLoadingCommits] = useState(false);
-  const [loadingStats, setLoadingStats] = useState(false);
   const [stats, setStats] = useState({
+    posts: 0,
+    images: 0,
     totalFiles: 0,
-    totalPosts: 0,
-    totalImages: 0,
-    repoSizeKb: 0,
   });
-  const [error, setError] = useState<string | null>(null);
-
-  // Generate Live URL
-  const getLiveUrl = () => {
-    if (globalConfig?.customDomain) {
-      let domain = globalConfig.customDomain;
-      if (!domain.startsWith("http")) domain = `https://${domain}`;
-      return domain;
-    }
-    const isPrimaryPages = repo.name.toLowerCase() === `${profile.username.toLowerCase()}.github.io`;
-    if (isPrimaryPages) {
-      return `https://${profile.username.toLowerCase()}.github.io/`;
-    }
-    return `https://${profile.username.toLowerCase()}.github.io/${repo.name}/`;
-  };
-
-  const loadDashboardData = async () => {
-    setError(null);
-    setLoadingCommits(true);
-    setLoadingStats(true);
-
-    try {
-      // 1. Load commits timeline
-      const list = await fetchRecentCommits(profile.pat, repo.owner, repo.name, branch);
-      setCommits(list);
-    } catch (err: any) {
-      setError(err.message || "Failed to load commits timeline.");
-    } finally {
-      setLoadingCommits(false);
-    }
-
-    try {
-      // 2. Load repo files recursively to calculate static site statistics
-      const allFiles = await fetchAllFilesRecursive(profile.pat, repo.owner, repo.name, branch);
-      
-      const posts = allFiles.filter(
-        (f) => f.name.endsWith(".md") || f.name.endsWith(".markdown")
-      );
-      const images = allFiles.filter((f) => {
-        const ext = f.name.split(".").pop()?.toLowerCase() || "";
-        return ["png", "jpg", "jpeg", "webp", "gif", "svg", "ico"].includes(ext);
-      });
-
-      setStats({
-        totalFiles: allFiles.length,
-        totalPosts: posts.length,
-        totalImages: images.length,
-        repoSizeKb: Math.round(allFiles.reduce((acc, curr) => acc + curr.size, 0) / 1024),
-      });
-    } catch (err: any) {
-      console.warn("Failed to gather complete statistics recursively:", err);
-      // Fallback with partial data if recursive fails (e.g. big repo)
-      setStats({
-        totalFiles: 12,
-        totalPosts: 3,
-        totalImages: 4,
-        repoSizeKb: 250,
-      });
-    } finally {
-      setLoadingStats(false);
-    }
-  };
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
   }, [repo, branch]);
 
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      const list = await fetchRecentCommits(repo.owner, repo.name, branch);
+      setCommits(list);
+
+      const allFiles = await fetchAllFilesRecursive(repo.owner, repo.name, branch);
+      let postsCount = 0;
+      let imagesCount = 0;
+
+      allFiles.forEach(f => {
+        const ext = f.name.split('.').pop()?.toLowerCase();
+        if (ext === 'md' || ext === 'mdx') postsCount++;
+        if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext || '')) imagesCount++;
+      });
+
+      setStats({
+        posts: postsCount,
+        images: imagesCount,
+        totalFiles: allFiles.length
+      });
+    } catch (err) {
+      console.error("Dashboard failed to load:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="space-y-6 pb-24" id="dashboard-view">
-      {/* Premium Live URL Overview banner */}
-      <div className="bg-gradient-to-br from-[#1f242c] via-[#161b22] to-[#1c2128] border border-[#e6e2d6] rounded-2xl p-5 shadow-lg space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Globe className="text-[#2F81F7]" size={20} />
-            <h2 className="text-sm font-semibold text-gray-900 tracking-tight">Active Live URL Deployment</h2>
-          </div>
-          <button
-            onClick={loadDashboardData}
-            className="p-1.5 hover:bg-[#30363d] rounded-lg transition-colors text-gray-500 hover:text-gray-900"
-            title="Refresh dashboard"
-          >
-            <RefreshCw size={15} className={(loadingCommits || loadingStats) ? "animate-spin" : ""} />
-          </button>
-        </div>
+    <div className="space-y-6 pb-24 animate-in fade-in duration-300">
+      <header className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+          Welcome back, {user?.username}
+        </h2>
+        <p className="text-gray-500 mt-1">
+          Here's what's happening with <strong className="text-gray-700">{repo.name}</strong> on branch <strong className="text-gray-700 font-mono text-xs">{branch}</strong>.
+        </p>
+      </header>
 
-        <div className="space-y-1.5">
-          <a
-            href={getLiveUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xl font-bold text-[#58a6ff] hover:underline flex items-center gap-1.5 break-all leading-tight tracking-tight"
-          >
-            {getLiveUrl().replace("https://", "")}
-            <ExternalLink size={15} className="shrink-0" />
-          </a>
-          <p className="text-xs text-gray-500 flex items-center gap-1.5 flex-wrap">
-            <span>Powered by</span>
-            <span className="text-gray-700 font-medium bg-[#30363d]/50 px-1.5 py-0.5 rounded">
-              {globalConfig?.deploymentPlatform === "cloudflare_pages" ? "Cloudflare Pages" :
-               globalConfig?.deploymentPlatform === "vercel" ? "Vercel" :
-               globalConfig?.deploymentPlatform === "netlify" ? "Netlify" :
-               "GitHub Pages"}
-            </span>
-            <span>deploying from active tree</span>
-            <span className="text-[#58a6ff] bg-[#1f6feb26] px-1.5 py-0.5 rounded font-mono text-[10px] font-semibold border border-blue-500/10">
-              {branch}
-            </span>
-          </p>
-        </div>
-
-        {/* Sync Status Badge */}
-        <div className="flex items-center gap-2 pt-3 border-t border-[#e6e2d6]/50 text-xs text-gray-500">
-          <CheckCircle2 size={13} className="text-[#238636] shrink-0" />
-          <span>Connected to {repo.fullName} ({repo.private ? "Private" : "Public"}) • Web Actions OK</span>
-        </div>
-      </div>
-
-      {/* High-Fidelity Bento Grid Overview Cards */}
+      {/* Overview Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        
-        {/* Repo Status */}
-        <div className="bg-white border border-[#e6e2d6] rounded-xl p-4 flex flex-col justify-between min-h-24">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Repository Status</span>
-          <div>
-            <p className="text-base font-semibold text-gray-900 truncate">{repo.name}</p>
-            <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#2386361a] border border-[#23863640] text-[#238636]">
-              ● SYNCHRONIZED
-            </span>
+        <div className="bg-white border border-[#e6e2d6] rounded-2xl p-5 shadow-sm hover:border-blue-500/30 transition-colors group cursor-pointer" onClick={() => onNavigate("blog")}>
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+              <FileText size={20} />
+            </div>
+            <ArrowRight size={16} className="text-gray-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
           </div>
+          <h3 className="text-3xl font-bold text-gray-900">{loading ? "..." : stats.posts}</h3>
+          <p className="text-sm font-medium text-gray-500 mt-1">Markdown Posts</p>
         </div>
 
-        {/* Deployment Status */}
-        <div className="bg-white border border-[#e6e2d6] rounded-xl p-4 flex flex-col justify-between min-h-24">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Deployment Status</span>
-          <div>
-            <p className="text-lg font-bold text-gray-900">Active</p>
-            <p className="text-[10px] text-gray-400 mt-0.5 font-mono">Last build 1m ago</p>
+        <div className="bg-white border border-[#e6e2d6] rounded-2xl p-5 shadow-sm hover:border-purple-500/30 transition-colors group cursor-pointer" onClick={() => onNavigate("media")}>
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition-colors">
+              <ImageIcon size={20} />
+            </div>
+            <ArrowRight size={16} className="text-gray-300 group-hover:text-purple-500 group-hover:translate-x-1 transition-all" />
           </div>
+          <h3 className="text-3xl font-bold text-gray-900">{loading ? "..." : stats.images}</h3>
+          <p className="text-sm font-medium text-gray-500 mt-1">Media Assets</p>
         </div>
 
-        {/* Repository Size */}
-        <div className="bg-white border border-[#e6e2d6] rounded-xl p-4 flex flex-col justify-between min-h-24">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Repository Size</span>
-          <div>
-            <p className="text-lg font-bold text-gray-900">{loadingStats ? "..." : `${stats.repoSizeKb} KB`}</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">Asset files loaded</p>
+        <div className="bg-white border border-[#e6e2d6] rounded-2xl p-5 shadow-sm hover:border-emerald-500/30 transition-colors group cursor-pointer" onClick={() => onNavigate("files")}>
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+              <Settings size={20} />
+            </div>
+            <ArrowRight size={16} className="text-gray-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
           </div>
+          <h3 className="text-3xl font-bold text-gray-900">{loading ? "..." : stats.totalFiles}</h3>
+          <p className="text-sm font-medium text-gray-500 mt-1">Total Files</p>
         </div>
 
-        {/* Total Files */}
-        <div className="bg-white border border-[#e6e2d6] rounded-xl p-4 flex flex-col justify-between min-h-24">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Files</span>
-          <div>
-            <p className="text-lg font-bold text-gray-900">{loadingStats ? "..." : stats.totalFiles}</p>
-            <button onClick={() => onNavigate("files")} className="text-[10px] text-[#58a6ff] hover:underline text-left">
-              Browse workspace &rarr;
-            </button>
+        <div className="bg-white border border-[#e6e2d6] rounded-2xl p-5 shadow-sm hover:border-orange-500/30 transition-colors group cursor-pointer" onClick={() => onNavigate("deploy")}>
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2.5 bg-orange-50 text-orange-600 rounded-xl group-hover:bg-orange-600 group-hover:text-white transition-colors">
+              <Globe size={20} />
+            </div>
+            <ArrowRight size={16} className="text-gray-300 group-hover:text-orange-500 group-hover:translate-x-1 transition-all" />
           </div>
-        </div>
-
-        {/* Blog Posts */}
-        <div className="bg-white border border-[#e6e2d6] rounded-xl p-4 flex flex-col justify-between min-h-24">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Blog Posts</span>
-          <div>
-            <p className="text-lg font-bold text-gray-900">{loadingStats ? "..." : stats.totalPosts}</p>
-            <button onClick={() => onNavigate("blog")} className="text-[10px] text-teal-400 hover:underline text-left">
-              Write blog post &rarr;
-            </button>
-          </div>
-        </div>
-
-        {/* Images */}
-        <div className="bg-white border border-[#e6e2d6] rounded-xl p-4 flex flex-col justify-between min-h-24">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Images & Assets</span>
-          <div>
-            <p className="text-lg font-bold text-gray-900">{loadingStats ? "..." : stats.totalImages}</p>
-            <button onClick={() => onNavigate("media")} className="text-[10px] text-blue-400 hover:underline text-left">
-              Manage assets &rarr;
-            </button>
-          </div>
-        </div>
-
-        {/* Last Commit */}
-        <div className="bg-white border border-[#e6e2d6] rounded-xl p-4 flex flex-col justify-between min-h-24 col-span-2">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Last Commit Sha</span>
-          <div>
-            <p className="text-xs font-mono text-gray-700 truncate font-bold bg-[#f0ece1] p-1 rounded border border-[#e6e2d6]">
-              {commits.length > 0 ? commits[0].sha : "Unavailable"}
-            </p>
-            <p className="text-[10px] text-gray-400 mt-1 truncate">
-              {commits.length > 0 ? commits[0].message : "No commits found"}
-            </p>
-          </div>
-        </div>
-
-        {/* Branch */}
-        <div className="bg-white border border-[#e6e2d6] rounded-xl p-4 flex flex-col justify-between min-h-24">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Current Branch</span>
-          <div>
-            <span className="text-xs font-mono text-gray-900 bg-[#30363d]/50 px-2 py-1 rounded font-bold border border-[#e6e2d6]">
-              {branch}
-            </span>
-            <p className="text-[10px] text-gray-500 mt-2">Default target</p>
-          </div>
-        </div>
-
-        {/* Storage Usage */}
-        <div className="bg-white border border-[#e6e2d6] rounded-xl p-4 flex flex-col justify-between min-h-24">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Storage Limit</span>
-          <div>
-            <p className="text-lg font-bold text-gray-900">0.15%</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">Of 1 GB GitHub quota</p>
-          </div>
-        </div>
-
-        {/* Rate limit */}
-        <div className="bg-white border border-[#e6e2d6] rounded-xl p-4 flex flex-col justify-between min-h-24">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">GitHub API Rate Limit</span>
-          <div>
-            <p className="text-lg font-bold text-[#3fb950]">4,992 / 5,000</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">Resets in 45m</p>
-          </div>
-        </div>
-
-        {/* Health Score */}
-        <div className="bg-white border border-[#e6e2d6] rounded-xl p-4 flex flex-col justify-between min-h-24">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Health Score</span>
-          <div>
-            <p className="text-lg font-bold text-[#3fb950]">98 / 100</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">W3C standards passed</p>
-          </div>
-        </div>
-
-        {/* SEO Score */}
-        <div className="bg-white border border-[#e6e2d6] rounded-xl p-4 flex flex-col justify-between min-h-24">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">SEO Score</span>
-          <div>
-            <p className="text-lg font-bold text-[#d29922]">92 / 100</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">Needs meta tags</p>
-          </div>
-        </div>
-
-        {/* Website Performance */}
-        <div className="bg-white border border-[#e6e2d6] rounded-xl p-4 flex flex-col justify-between min-h-24">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Website Performance</span>
-          <div>
-            <p className="text-lg font-bold text-[#3fb950]">99 / 100</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">Static content compressed</p>
-          </div>
+          <h3 className="text-3xl font-bold text-gray-900">Live</h3>
+          <p className="text-sm font-medium text-gray-500 mt-1">Deploy Status</p>
         </div>
       </div>
 
-      {/* Recent Commit History Timeline */}
-      <div className="bg-white border border-[#e6e2d6] rounded-2xl p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <History size={18} className="text-[#58a6ff]" />
-            <h3 className="text-sm font-semibold text-gray-900">Recent Git Commit Logs & Activities</h3>
-          </div>
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold font-mono">
-            Audit Logs Timeline
-          </span>
+      {/* Activity / Commits */}
+      <div className="bg-white border border-[#e6e2d6] rounded-2xl shadow-sm overflow-hidden mt-6">
+        <div className="px-6 py-5 border-b border-[#e6e2d6] flex justify-between items-center bg-[#fdfbf7]">
+          <h3 className="font-bold text-gray-900 flex items-center gap-2">
+            <Activity size={18} className="text-blue-500" />
+            Recent Activity
+          </h3>
+          <a href={repo.htmlUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-blue-600 hover:text-blue-800">
+            View on GitHub &rarr;
+          </a>
         </div>
-
-        {error && (
-          <div className="p-3 bg-red-950/40 border border-red-900/60 rounded-xl text-xs text-red-300 flex items-start gap-2">
-            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {loadingCommits ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="flex gap-3 animate-pulse">
-                <div className="w-8 h-8 rounded-full bg-[#30363d]" />
-                <div className="flex-1 space-y-1.5 py-1">
-                  <div className="h-3.5 bg-[#30363d] rounded w-3/4" />
-                  <div className="h-2.5 bg-[#30363d] rounded w-1/2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : commits.length === 0 ? (
-          <div className="text-center py-6 text-xs text-gray-500">
-            No commits found or error loading log timeline.
-          </div>
-        ) : (
-          <div className="relative border-l border-[#e6e2d6] ml-4 pl-5 space-y-5">
-            {commits.map((commit) => (
-              <div key={commit.sha} className="relative group">
-                {/* Timeline node */}
-                <div className="absolute -left-[27px] top-1.5 w-4 h-4 rounded-full border-2 border-[#161b22] bg-[#30363d] group-hover:bg-[#2f81f7] group-hover:scale-110 transition-all duration-200" />
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={commit.authorAvatarUrl}
-                      alt={commit.authorName}
-                      className="w-4 h-4 rounded-full border border-[#e6e2d6]"
-                    />
-                    <span className="text-xs font-semibold text-gray-700">{commit.authorName}</span>
-                    <span className="text-[10px] text-gray-500 font-mono bg-[#f0ece1] px-1.5 py-0.5 rounded border border-[#e6e2d6]">
-                      {commit.sha.slice(0, 7)}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-900 line-clamp-2 leading-relaxed font-semibold">{commit.message}</p>
-                  <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                    <Clock size={10} />
-                    <span>{new Date(commit.date).toLocaleDateString()} at {new Date(commit.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        <div className="divide-y divide-gray-100">
+          {loading ? (
+            <div className="p-8 text-center text-gray-500 flex flex-col items-center justify-center">
+              <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-2"></div>
+              Loading activity...
+            </div>
+          ) : commits.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">No recent activity found.</div>
+          ) : (
+            commits.map(commit => (
+              <div key={commit.sha} className="p-5 flex items-start gap-4 hover:bg-gray-50 transition-colors">
+                <img src={commit.authorAvatarUrl} alt={commit.authorName} className="w-10 h-10 rounded-full bg-gray-200 border border-gray-200" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-900 truncate">{commit.message}</p>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                    <span className="font-medium text-gray-700">{commit.authorName}</span>
+                    <span>&bull;</span>
+                    <span className="flex items-center gap-1"><Clock size={12}/> {new Date(commit.date).toLocaleDateString()}</span>
                   </div>
                 </div>
+                <a href={commit.htmlUrl} target="_blank" rel="noreferrer" className="text-[10px] font-mono text-gray-500 bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors hidden sm:block">
+                  {commit.sha.substring(0, 7)}
+                </a>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

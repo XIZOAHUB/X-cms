@@ -18,12 +18,12 @@ import { UserProfile, Repo, GlobalConfig } from "../../types/index";
 import { fetchFileContent, commitFile } from "../../services/githubApi";
 
 interface WebsiteManagerProps {
-  profile: UserProfile;
+  
   repo: Repo;
   branch: string;
 }
 
-export default function WebsiteManager({ profile, repo, branch }: WebsiteManagerProps) {
+export default function WebsiteManager({ repo, branch }: WebsiteManagerProps) {
   const [config, setConfig] = useState<GlobalConfig>({
     logoText: "AuroraCMS Static Site",
     authorName: "",
@@ -42,7 +42,7 @@ export default function WebsiteManager({ profile, repo, branch }: WebsiteManager
     setError(null);
     try {
       // Look for config.json in the repository
-      const fileData = await fetchFileContent(profile.pat, repo.owner, repo.name, "config.json", branch);
+      const fileData = await fetchFileContent(repo.owner, repo.name, "config.json", branch);
       const parsed = JSON.parse(fileData.content);
       
       setConfig({
@@ -76,7 +76,7 @@ export default function WebsiteManager({ profile, repo, branch }: WebsiteManager
     try {
       const content = JSON.stringify(config, null, 2);
       await commitFile(
-        profile.pat,
+        
         repo.owner,
         repo.name,
         "config.json",
@@ -321,9 +321,9 @@ export default function WebsiteManager({ profile, repo, branch }: WebsiteManager
                     const privacyContent = `---\ntitle: "Privacy Policy"\n---\n# Privacy Policy\n\nWe care about your privacy...`;
                     const galleryContent = `---\ntitle: "Image Gallery"\n---\n# Image Gallery\n\nAdd your images here.`;
                     
-                    await commitFile(profile.pat, repo.owner, repo.name, "pages/terms.md", termsContent, undefined, "Add Terms page", branch);
-                    await commitFile(profile.pat, repo.owner, repo.name, "pages/privacy.md", privacyContent, undefined, "Add Privacy page", branch);
-                    await commitFile(profile.pat, repo.owner, repo.name, "pages/gallery.md", galleryContent, undefined, "Add Gallery page", branch);
+                    await commitFile(repo.owner, repo.name, "pages/terms.md", termsContent, undefined, "Add Terms page", branch);
+                    await commitFile(repo.owner, repo.name, "pages/privacy.md", privacyContent, undefined, "Add Privacy page", branch);
+                    await commitFile(repo.owner, repo.name, "pages/gallery.md", galleryContent, undefined, "Add Gallery page", branch);
                     
                     alert("Standard pages generated successfully in /pages directory.");
                   } catch (err: any) {

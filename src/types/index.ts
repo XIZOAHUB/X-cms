@@ -2,9 +2,7 @@ export interface UserProfile {
   username: string;
   avatarUrl: string;
   email?: string;
-  pat: string;
-  geminiKey?: string;
-  cloudflareToken?: string;
+  // No PAT or Cloudflare tokens stored on the client!
 }
 
 export interface Repo {
@@ -28,7 +26,7 @@ export interface FileNode {
 }
 
 export interface BlogPost {
-  path: string; // File path in the repository (e.g. "blog/my-first-post.md" or "_posts/my-first-post.md")
+  path: string;
   sha: string;
   slug: string;
   title: string;
@@ -57,8 +55,6 @@ export interface GlobalConfig {
   copyrightText: string;
   customDomain?: string;
   deploymentPlatform?: "github_pages" | "cloudflare_pages" | "vercel" | "netlify";
-  cloudflareDeployHookUrl?: string;
-  cloudflareProjectName?: string;
   socialLinks: {
     youtube?: string;
     instagram?: string;

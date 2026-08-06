@@ -17,12 +17,12 @@ import { UserProfile, Repo, FileNode } from "../../types/index";
 import { fetchDirectory, commitFile, deleteFile, fetchAllFilesRecursive } from "../../services/githubApi";
 
 interface MediaLibraryProps {
-  profile: UserProfile;
+  
   repo: Repo;
   branch: string;
 }
 
-export default function MediaLibrary({ profile, repo, branch }: MediaLibraryProps) {
+export default function MediaLibrary({ repo, branch }: MediaLibraryProps) {
   const [images, setImages] = useState<FileNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export default function MediaLibrary({ profile, repo, branch }: MediaLibraryProp
     setLoading(true);
     setError(null);
     try {
-      const allFiles = await fetchAllFilesRecursive(profile.pat, repo.owner, repo.name, branch);
+      const allFiles = await fetchAllFilesRecursive(repo.owner, repo.name, branch);
 
       // Filter for common image extensions
       const imgExtensions = ["png", "jpg", "jpeg", "webp", "gif", "svg", "ico"];
@@ -139,7 +139,7 @@ export default function MediaLibrary({ profile, repo, branch }: MediaLibraryProp
 
       // Commit to GitHub
       await commitFile(
-        profile.pat,
+        
         repo.owner,
         repo.name,
         fullPath,
@@ -167,7 +167,7 @@ export default function MediaLibrary({ profile, repo, branch }: MediaLibraryProp
     setLoading(true);
     setError(null);
     try {
-      await deleteFile(profile.pat, repo.owner, repo.name, img.path, img.sha, `media: delete asset ${img.name}`, branch);
+      await deleteFile(repo.owner, repo.name, img.path, img.sha, `media: delete asset ${img.name}`, branch);
       setPreviewImage(null);
       loadMedia();
     } catch (err: any) {

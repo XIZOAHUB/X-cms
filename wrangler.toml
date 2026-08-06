@@ -1,0 +1,10 @@
+name = "aurora-cms-pro"
+pages_build_output_dir = "dist"
+
+[vars]
+# GITHUB_CLIENT_ID = "..." # Set these in Cloudflare Dashboard
+# CLOUDFLARE_ACCOUNT_ID = "..."
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "your_kv_namespace_id"

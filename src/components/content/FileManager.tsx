@@ -21,12 +21,12 @@ import { UserProfile, Repo, FileNode } from "../../types/index";
 import { fetchDirectory, fetchFileContent, commitFile, deleteFile, fetchAllFilesRecursive } from "../../services/githubApi";
 
 interface FileManagerProps {
-  profile: UserProfile;
+  
   repo: Repo;
   branch: string;
 }
 
-export default function FileManager({ profile, repo, branch }: FileManagerProps) {
+export default function FileManager({ repo, branch }: FileManagerProps) {
   const [currentPath, setCurrentPath] = useState("");
   const [files, setFiles] = useState<FileNode[]>([]);
   const [loading, setLoading] = useState(false);
@@ -60,7 +60,7 @@ export default function FileManager({ profile, repo, branch }: FileManagerProps)
     setLoading(true);
     setError(null);
     try {
-      const list = await fetchDirectory(profile.pat, repo.owner, repo.name, path, branch);
+      const list = await fetchDirectory(repo.owner, repo.name, path, branch);
       // Sort: folders first, then files
       const sorted = [...list].sort((a, b) => {
         if (a.type === b.type) return a.name.localeCompare(b.name);
@@ -104,7 +104,7 @@ export default function FileManager({ profile, repo, branch }: FileManagerProps)
     setError(null);
 
     try {
-      const data = await fetchFileContent(profile.pat, repo.owner, repo.name, file.path, branch);
+      const data = await fetchFileContent(repo.owner, repo.name, file.path, branch);
       setEditorContent(data.content);
       setOriginalContent(data.content);
       setEditorSha(data.sha);
@@ -123,7 +123,7 @@ export default function FileManager({ profile, repo, branch }: FileManagerProps)
 
     try {
       const message = editorCommitMsg.trim() || `update: modify ${editingFile.name}`;
-      await commitFile(profile.pat, repo.owner, repo.name, editingFile.path, editorContent, editorSha, message, branch);
+      await commitFile(repo.owner, repo.name, editingFile.path, editorContent, editorSha, message, branch);
       setEditingFile(null);
       loadDirectory(currentPath);
     } catch (err: any) {
@@ -140,7 +140,7 @@ export default function FileManager({ profile, repo, branch }: FileManagerProps)
     setLoading(true);
     setError(null);
     try {
-      await deleteFile(profile.pat, repo.owner, repo.name, file.path, file.sha, `delete: remove ${file.name}`, branch);
+      await deleteFile(repo.owner, repo.name, file.path, file.sha, `delete: remove ${file.name}`, branch);
       loadDirectory(currentPath);
     } catch (err: any) {
       setError(`Failed to delete: ${err.message}`);
@@ -161,7 +161,7 @@ export default function FileManager({ profile, repo, branch }: FileManagerProps)
       if (showCreateModal === "file") {
         // Create an empty markdown or text file
         await commitFile(
-          profile.pat,
+          
           repo.owner,
           repo.name,
           cleanPath,
@@ -175,7 +175,7 @@ export default function FileManager({ profile, repo, branch }: FileManagerProps)
         // We bypass this by placing a hidden placeholder `.gitkeep` file inside! This is clean and professional!
         const keepFilePath = `${cleanPath}/.gitkeep`;
         await commitFile(
-          profile.pat,
+          
           repo.owner,
           repo.name,
           keepFilePath,
@@ -208,7 +208,7 @@ export default function FileManager({ profile, repo, branch }: FileManagerProps)
     setError(null);
 
     try {
-      const allFiles = await fetchAllFilesRecursive(profile.pat, repo.owner, repo.name, branch);
+      const allFiles = await fetchAllFilesRecursive(repo.owner, repo.name, branch);
       
       const exts = replaceExtensions
         .split(",")
@@ -226,7 +226,7 @@ export default function FileManager({ profile, repo, branch }: FileManagerProps)
       // Download content for files to check if they contain the search term
       for (const file of matchingFiles) {
         try {
-          const fileData = await fetchFileContent(profile.pat, repo.owner, repo.name, file.path, branch);
+          const fileData = await fetchFileContent(repo.owner, repo.name, file.path, branch);
           if (fileData.content.includes(searchQuery)) {
             // Count occurrences
             const regex = new RegExp(searchQuery.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"), "g");
@@ -277,7 +277,7 @@ export default function FileManager({ profile, repo, branch }: FileManagerProps)
         const replacedContent = item.originalContent.replace(regex, replaceQuery);
 
         await commitFile(
-          profile.pat,
+          
           repo.owner,
           repo.name,
           item.path,
