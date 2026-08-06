@@ -1,3 +1,4 @@
+--- START OF FILE X-cms-main/server.ts ---
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
@@ -47,7 +48,6 @@ app.get("/api/auth/callback", async (req, res) => {
   if (!code) return res.status(400).send("No code provided");
 
   try {
-    // Exchange code for access token
     const tokenResponse = await axios.post(
       "https://github.com/login/oauth/access_token",
       {
@@ -61,19 +61,16 @@ app.get("/api/auth/callback", async (req, res) => {
     const accessToken = tokenResponse.data.access_token;
     if (!accessToken) throw new Error("Failed to get access token");
 
-    // Get user profile
     const userResponse = await axios.get("https://api.github.com/user", {
       headers: { Authorization: `token ${accessToken}` },
     });
 
     const user = userResponse.data;
 
-    // Create JWT containing encrypted token (simplified encryption for demo)
-    // In production Cloudflare Pages, we'd store the token in KV securely
     const sessionPayload = {
       username: user.login,
       avatarUrl: user.avatar_url,
-      accessToken, // Storing PAT in HTTP-only signed JWT cookie
+      accessToken,
     };
 
     const token = jwt.sign(sessionPayload, JWT_SECRET, { expiresIn: "7d" });
@@ -81,7 +78,7 @@ app.get("/api/auth/callback", async (req, res) => {
     res.cookie("aurora_session", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax", 
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -106,7 +103,7 @@ app.post("/api/auth/logout", (req, res) => {
 
 // ---- GitHub API Proxy ----
 app.use("/api/github", requireAuth, async (req: any, res) => {
-  const githubPath = req.url; // preserves query params
+  const githubPath = req.url;
   try {
     const response = await axios({
       method: req.method,
@@ -115,7 +112,7 @@ app.use("/api/github", requireAuth, async (req: any, res) => {
         Authorization: `token ${req.user.accessToken}`,
         Accept: "application/vnd.github.v3+json",
       },
-      data: req.body,
+      data: req.method !== 'GET' ? req.body : undefined,
     });
     res.status(response.status).json(response.data);
   } catch (error: any) {
@@ -136,7 +133,7 @@ app.use("/api/cloudflare", requireAuth, async (req: any, res) => {
     return res.status(403).json({ error: "Cloudflare credentials not configured on server" });
   }
 
-  const cfPath = req.url; // preserves query params
+  const cfPath = req.url;
   try {
     const response = await axios({
       method: req.method,
@@ -175,7 +172,7 @@ app.post("/api/gemini/generate", requireAuth, async (req, res) => {
     
     const ai = getGeminiClient();
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-1.5-flash",
       contents: prompt,
       config: systemInstruction ? { systemInstruction } : undefined,
     });
@@ -185,7 +182,6 @@ app.post("/api/gemini/generate", requireAuth, async (req, res) => {
   }
 });
 
-// Configure Vite middleware for development or Static File serving for production
 async function bootstrap() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -212,3 +208,4 @@ bootstrap().catch((err) => {
   console.error("Failed to bootstrap the Express/Vite server:", err);
   process.exit(1);
 });
+--- END OF FILE ---
