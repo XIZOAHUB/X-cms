@@ -1,5 +1,9 @@
-# wrangler.toml
 name = "aurora-cms-pro"
 pages_build_output_dir = "dist"
 compatibility_flags = ["nodejs_compat"]
 compatibility_date = "2024-09-23"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "aurora-db"
+database_id = "febe2822-1013-4296-bee1-6d668b0f2c4d"
