@@ -1,26 +1,28 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [react()],
-  
-  // For Cloudflare Pages - SPA routing
+  plugins: [
+    react(),
+    tailwindcss()
+  ],
+
+  // Build configuration
   build: {
     outDir: 'dist',
     sourcemap: true,
     rollupOptions: {
       output: {
         manualChunks: {
-          // Split vendor chunks for better caching
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          editor: ['@uiw/react-md-editor'],
           ui: ['lucide-react', 'sonner']
         }
       }
     }
   },
-  
+
   // Path aliases
   resolve: {
     alias: {
@@ -33,10 +35,15 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils')
     }
   },
-  
-  // Dev server
+
+  // Development server
   server: {
     port: 5173,
     open: true
+  },
+
+  // Preview server
+  preview: {
+    port: 4173
   }
 })
