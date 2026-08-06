@@ -99,14 +99,15 @@ export const onRequest: PagesFunction<{
     );
 
     const response = Response.redirect(
-      "https://cms-web.xizoa.com/dashboard",
-      302
-    );
+  "https://cms-web.xizoa.com/dashboard",
+  302
+);
 
-    response.headers.append(
-      "Set-Cookie",
-      `session=${session}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`
-    );
+response.headers.append(
+  "Set-Cookie",
+  `session=${session}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`
+);
+
 
     return response;
   } catch (err: any) {
