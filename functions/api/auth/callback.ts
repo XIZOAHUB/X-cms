@@ -1,4 +1,8 @@
-export const onRequest: PagesFunction = async (context) => {
+export const onRequest: PagesFunction<{
+  DB: D1Database;
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
+}> = async (context) => {
   try {
     const url = new URL(context.request.url);
     const code = url.searchParams.get("code");
@@ -9,92 +13,88 @@ export const onRequest: PagesFunction = async (context) => {
 
     const clientId = context.env.GITHUB_CLIENT_ID;
     const clientSecret = context.env.GITHUB_CLIENT_SECRET;
-    const jwtSecret = context.env.JWT_SECRET;
-
-    if (!clientId) {
-      return new Response("Missing GITHUB_CLIENT_ID", { status: 500 });
-    }
-
-    if (!clientSecret) {
-      return new Response("Missing GITHUB_CLIENT_SECRET", { status: 500 });
-    }
-
-    if (!jwtSecret) {
-      return new Response("Missing JWT_SECRET", { status: 500 });
-    }
 
     // Exchange code for access token
+    const params = new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      redirect_uri: "https://cms-web.xizoa.com/api/auth/callback",
+    });
+
     const tokenRes = await fetch(
       "https://github.com/login/oauth/access_token",
       {
         method: "POST",
         headers: {
           Accept: "application/json",
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: JSON.stringify({
-          client_id: clientId,
-          client_secret: clientSecret,
-          code,
-          redirect_uri: "https://cms-web.xizoa.com/api/auth/callback"
-        }),
+        body: params.toString(),
       }
     );
 
-    const responseText = await tokenRes.text();
+    const tokenData: any = await tokenRes.json();
 
-    if (!tokenRes.ok) {
-      return new Response(responseText, {
-        status: tokenRes.status,
+    if (!tokenData.access_token) {
+      return new Response(JSON.stringify(tokenData, null, 2), {
+        status: 401,
         headers: {
-          "Content-Type": "text/plain"
-        }
+          "Content-Type": "application/json",
+        },
       });
     }
 
-    const tokenData = JSON.parse(responseText);
-
-    if (!tokenData.access_token) {
-      return new Response(
-        JSON.stringify(tokenData, null, 2),
-        {
-          status: 401,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
-    // Get GitHub user - [FIXED]: Added User-Agent Header here
+    // GitHub user
     const userRes = await fetch("https://api.github.com/user", {
       headers: {
         Authorization: `Bearer ${tokenData.access_token}`,
         Accept: "application/vnd.github+json",
-        "User-Agent": "Cloudflare-Pages-App", // GitHub STRICTLY requires this
+        "User-Agent": "AuroraCMS",
       },
     });
 
     const user: any = await userRes.json();
 
-    if (!user.login) {
-      return new Response(
-        JSON.stringify(user, null, 2),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
+    const now = new Date().toISOString();
+
+    // Save / Update user in D1
+    await context.env.DB.prepare(`
+      INSERT INTO users (
+        github_id,
+        username,
+        name,
+        email,
+        avatar,
+        created_at,
+        last_login
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+
+      ON CONFLICT(github_id)
+      DO UPDATE SET
+        username = excluded.username,
+        name = excluded.name,
+        email = excluded.email,
+        avatar = excluded.avatar,
+        last_login = excluded.last_login
+    `)
+      .bind(
+        user.id,
+        user.login,
+        user.name,
+        user.email,
+        user.avatar_url,
+        now,
+        now
+      )
+      .run();
 
     // Temporary session
     const session = btoa(
       JSON.stringify({
-        id: user.id,
+        github_id: user.id,
         username: user.login,
-        avatar: user.avatar_url,
       })
     );
 
@@ -114,8 +114,8 @@ export const onRequest: PagesFunction = async (context) => {
       JSON.stringify(
         {
           success: false,
-          error: err?.message ?? "Unknown error",
-          stack: err?.stack ?? null,
+          error: err.message,
+          stack: err.stack,
         },
         null,
         2
