@@ -1,4 +1,3 @@
---- START OF FILE X-cms-main/src/components/layout/DashboardLayout.tsx ---
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
@@ -30,4 +29,3 @@ export const DashboardLayout = () => {
 };
 
 export default DashboardLayout;
---- END OF FILE ---
