@@ -1,4 +1,3 @@
---- START OF FILE X-cms-main/functions/api/auth/me.ts ---
 export const onRequest: PagesFunction<{JWT_SECRET: string}> = async (context) => {
   const cookieHeader = context.request.headers.get('Cookie') || '';
   const session = cookieHeader.split('; ').find(c => c.trim().startsWith('aurora_session='))?.split('=')[1];
@@ -36,4 +35,3 @@ export const onRequest: PagesFunction<{JWT_SECRET: string}> = async (context) =>
     return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401 });
   }
 };
---- END OF FILE ---
