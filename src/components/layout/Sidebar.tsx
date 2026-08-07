@@ -62,3 +62,4 @@ export default function Sidebar({ activeTab, setActiveTab, profile }: SidebarPro
     </div>
   );
 }
+  // Available
