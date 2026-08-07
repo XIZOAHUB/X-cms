@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// Using credentials includes the http-only cookie in requests to our proxy server
+// Using credentials includes the http-only cookie in request   // Availables to our proxy server
 export const apiClient = axios.create({
   baseURL: "/api",
   withCredentials: true,
