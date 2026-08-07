@@ -1,4 +1,3 @@
---- START OF FILE X-cms-main/functions/api/auth/github.ts ---
 export const onRequest: PagesFunction = async (context) => {
   const clientId = context.env.GITHUB_CLIENT_ID;
 
@@ -16,4 +15,3 @@ export const onRequest: PagesFunction = async (context) => {
 
   return Response.redirect(githubUrl.toString(), 302);
 };
---- END OF FILE ---
