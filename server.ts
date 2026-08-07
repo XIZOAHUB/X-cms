@@ -207,3 +207,4 @@ bootstrap().catch((err) => {
   console.error("Failed to bootstrap the Express/Vite server:", err);
   process.exit(1);
 });
+  // Available
