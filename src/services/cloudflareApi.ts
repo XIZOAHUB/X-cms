@@ -59,3 +59,4 @@ export async function triggerDeployment(projectName: string): Promise<Cloudflare
   const response = await apiClient.post(`/cloudflare/pages/projects/${projectName}/deployments`);
   return response.data.result;
 }
+  // Available
