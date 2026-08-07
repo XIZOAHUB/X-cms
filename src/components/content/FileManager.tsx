@@ -61,7 +61,7 @@ export default function FileManager({ repo, branch }: FileManagerProps) {
     setError(null);
     try {
       const list = await fetchDirectory(repo.owner, repo.name, path, branch);
-      // Sort: folders first, then files
+      // Sort: folders first, then files upadte 
       const sorted = [...list].sort((a, b) => {
         if (a.type === b.type) return a.name.localeCompare(b.name);
         return a.type === "dir" ? -1 : 1;
