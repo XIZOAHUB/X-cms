@@ -41,7 +41,7 @@ interface Agent {
 }
 
 export default function AiAssistant({ profile, repo, branch }: AiAssistantProps) {
-  // Available AI Agents list
+  // Available A auo I Agents list
   const agents: Agent[] = [
     {
       id: "seo_agent",
