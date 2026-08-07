@@ -5,7 +5,7 @@ import { Toaster } from 'sonner'
 import App from './App'
 import './index.css'
 
-// Remove loader when React mounts
+// Remove loader when React mounts   // Available
 const removeLoader = () => {
   const loader = document.getElementById('loader')
   if (loader) {
