@@ -1,4 +1,3 @@
---- START OF FILE X-cms-main/src/App.tsx ---
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuthStore } from './store/authStore'
@@ -29,6 +28,7 @@ function App() {
     defaultBranch: "main",
     htmlUrl: `https://github.com/${user?.username || "demo"}/aurora-cms`
   })
+  
   const branch = "main"
 
   if (isLoading) {
@@ -63,4 +63,3 @@ function App() {
 }
 
 export default App
---- END OF FILE ---
