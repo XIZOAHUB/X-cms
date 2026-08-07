@@ -63,7 +63,7 @@ export default function Dashboard({ repo, branch, onNavigate }: DashboardProps) 
         </p>
       </header>
 
-      {/* Overview Cards */}
+      {/* Overview Cards  ka upadte*/}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white border border-[#e6e2d6] rounded-2xl p-5 shadow-sm hover:border-blue-500/30 transition-colors group cursor-pointer" onClick={() => onNavigate("blog")}>
           <div className="flex justify-between items-start mb-4">
