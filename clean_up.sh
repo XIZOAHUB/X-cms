@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash   // Available
 rm -f src/components/settings/SeoSuite.tsx
 rm -f src/components/settings/PluginManager.tsx
 rm -f src/components/settings/ThemeOptimizer.tsx
