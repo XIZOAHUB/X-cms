@@ -24,7 +24,7 @@ interface BlogCMSProps {
   branch: string;
 }
 
-// Frontmatter Helper Functions
+// Frontmatter Helper Functions uppdate 
 export function parseMarkdown(rawContent: string): { frontmatter: any; content: string } {
   const match = rawContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
   if (!match) {
