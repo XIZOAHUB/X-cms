@@ -1,4 +1,3 @@
---- START OF FILE X-cms-main/functions/api/auth/callback.ts ---
 export const onRequest: PagesFunction<{
   DB: D1Database;
   GITHUB_CLIENT_ID: string;
@@ -98,4 +97,3 @@ export const onRequest: PagesFunction<{
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 };
---- END OF FILE ---
