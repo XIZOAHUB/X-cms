@@ -42,7 +42,7 @@ export default defineConfig({
     open: true
   },
 
-  // Preview server
+  // Preview server   // Available
   preview: {
     port: 4173
   }
