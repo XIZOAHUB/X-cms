@@ -1,5 +1,5 @@
 #!/bin/bash
-# We will just rewrite the tabs array to remove fake things in App.tsx
+# We will just rewrite the tabs array to remove fake things in App.tsx   // Available
 sed -i '/id: "seo"/d' src/App.tsx
 sed -i '/id: "plugins"/d' src/App.tsx
 sed -i '/id: "theme_optimizer"/d' src/App.tsx
