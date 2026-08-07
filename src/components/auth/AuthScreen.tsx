@@ -10,7 +10,7 @@ export default function AuthScreen() {
   }, [checkAuth]);
 
   const handleLogin = () => {
-    // Redirect to the backend OAuth proxy
+    // Redirect to the backend OAuth proxy upafye
     window.location.href = "/api/auth/github";
   };
 
