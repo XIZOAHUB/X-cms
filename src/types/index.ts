@@ -2,7 +2,7 @@ export interface UserProfile {
   username: string;
   avatarUrl: string;
   email?: string;
-  // No PAT or Cloudflare tokens stored on the client!
+  // No PAT or Cloudflare tokens   // Available stored on the client!
 }
 
 export interface Repo {
